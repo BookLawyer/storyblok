@@ -169,9 +169,11 @@ program
   .requiredOption('--type <TYPE>', 'Define what will be sync. Can be components, folders, stories, datasources or roles')
   .requiredOption('--source <SPACE_ID>', 'Source space id')
   .requiredOption('--target <SPACE_ID>', 'Target space id')
+  .option('--backup', 'Generate a backup file for each type of content')
   .action(async (options) => {
     console.log(`${chalk.blue('-')} Sync data between spaces\n`)
 
+    const isBackup = !!options.backup
     const {
       type,
       source,
@@ -196,7 +198,8 @@ program
       await tasks.sync(_types, {
         token,
         source,
-        target
+        target,
+        isBackup
       })
 
       console.log('\n' + chalk.green('✓') + ' Sync data between spaces successfully completed')
@@ -377,6 +380,51 @@ program
       )
     } catch (e) {
       console.log(chalk.red('X') + ' An error ocurred to import data : ' + e.message)
+      process.exit(1)
+    }
+  })
+
+// restore from backup
+program
+  .command('restore-backup')
+  .description("Restore space from backup files")
+  .requiredOption('-t, --type <TYPE>', 'Type of the content you want to restore. Can be components, folders, stories')
+  .requiredOption('--target <SPACE_ID>', 'Target space id')
+  .action(async (options) => {
+    console.log(`${chalk.blue('-')} Restoring space from backup`)
+    const {
+      type,
+      target
+    } = options
+
+    if (!target) {
+      console.log(chalk.red('X') + ' Please provide the space as argument --target YOUR_SPACE_ID.')
+      process.exit(0)
+    }
+
+    try {
+      if (!api.isAuthorized()) {
+        await api.processLogin()
+      }
+
+      const _types = type.split(',') || []
+
+      _types.forEach(_type => {
+        if (!SYNC_TYPES.includes(_type)) {
+          throw new Error(`The type ${_type} is not valid`)
+        }
+      })
+
+      api.setSpaceId(target)
+      const token = creds.get().token || null
+      await tasks.restore(_types, {
+        token,
+        target
+      })
+
+      console.log('\n' + chalk.green('✓') + 'Restored space from backup')
+    } catch (e) {
+      console.log(chalk.red('X') + ' An error occurred when executing the restore task: ' + e.message)
       process.exit(1)
     }
   })

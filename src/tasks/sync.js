@@ -1,9 +1,10 @@
 const pSeries = require('p-series')
 const chalk = require('chalk')
+const fs = require('fs')
 const StoryblokClient = require('storyblok-js-client')
 const SyncComponents = require('./sync-commands/components')
 const SyncDatasources = require('./sync-commands/datasources')
-const { capitalize } = require('../utils')
+const { capitalize, dateForFile } = require('../utils')
 
 const SyncSpaces = {
   targetComponents: [],
@@ -13,6 +14,7 @@ const SyncSpaces = {
     console.log(chalk.green('✓') + ' Loading options')
     this.sourceSpaceId = options.source
     this.targetSpaceId = options.target
+    this.isBackup = options.isBackup
     this.oauthToken = options.token
     this.client = new StoryblokClient({
       oauthToken: options.token
@@ -60,7 +62,7 @@ const SyncSpaces = {
     var all = await this.client.getAll(`spaces/${this.sourceSpaceId}/stories`, {
       story_only: 1
     })
-
+    const storiesStream = (this.isBackup) ? fs.createWriteStream(`stories_backup_${dateForFile()}.json`, {flags:'a'}) : null
     for (let i = 0; i < all.length; i++) {
       console.log(chalk.green('✓') + ' Starting update ' + all[i].full_slug)
 
@@ -92,6 +94,8 @@ const SyncSpaces = {
           ...(sourceStory.published ? { published: 1 } : {})
         }
 
+        if (this.isBackup) storiesStream.write(JSON.stringify(payload) + "\n")
+
         let createdStory = null
         if (existingStory.data.stories.length === 1) {
           createdStory = await this.client.put('spaces/' + this.targetSpaceId + '/stories/' + existingStory.data.stories[0].id, payload)
@@ -121,6 +125,8 @@ const SyncSpaces = {
       sort_by: 'slug:asc'
     })
     const syncedFolders = {}
+    const backupData = {folders: []}
+    const folderStream = (this.isBackup) ? fs.createWriteStream(`folders_backup_${dateForFile()}.json`, {flags:'a'}) : null
 
     for (var i = 0; i < sourceFolders.length; i++) {
       const folder = sourceFolders[i]
@@ -159,6 +165,7 @@ const SyncSpaces = {
         }
 
         let createdFolder = null
+        if (this.isBackup) backupData.folders.push(payload)
         if (existingFolder.data.stories.length === 1) {
           console.log(`Folder ${folder.name} already exists`)
           createdFolder = await this.client.put('spaces/' + this.targetSpaceId + '/stories/' + existingFolder.data.stories[0].id, payload)
@@ -179,6 +186,7 @@ const SyncSpaces = {
         console.log(e)
       }
     }
+    if(this.isBackup) folderStream.write(JSON.stringify(backupData, null, 2))
   },
 
   async syncRoles () {
