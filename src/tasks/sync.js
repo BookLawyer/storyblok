@@ -53,6 +53,7 @@ const SyncSpaces = {
     })
 
     var folderMapping = {}
+    const backupData = []
 
     for (let i = 0; i < targetFolders.length; i++) {
       var folder = targetFolders[i]
@@ -94,7 +95,7 @@ const SyncSpaces = {
           ...(sourceStory.published ? { published: 1 } : {})
         }
 
-        if (this.isBackup) storiesStream.write(JSON.stringify(payload) + "\n")
+        if (this.isBackup) backupData.push(payload)
 
         let createdStory = null
         if (existingStory.data.stories.length === 1) {
@@ -114,6 +115,7 @@ const SyncSpaces = {
         console.log(e)
       }
     }
+    if (this.isBackup) storiesStream.write(JSON.stringify(backupData, null, 2))
 
     return Promise.resolve(all)
   },
@@ -125,7 +127,7 @@ const SyncSpaces = {
       sort_by: 'slug:asc'
     })
     const syncedFolders = {}
-    const backupData = {folders: []}
+    const backupData = []
     const folderStream = (this.isBackup) ? fs.createWriteStream(`folders_backup_${dateForFile()}.json`, {flags:'a'}) : null
 
     for (var i = 0; i < sourceFolders.length; i++) {
@@ -144,7 +146,6 @@ const SyncSpaces = {
           if (!syncedFolders[folder.id]) {
             const folderSlug = folder.full_slug.split('/')
             const parentFolderSlug = folderSlug.splice(0, folderSlug.length - 1).join('/')
-
             const parentFolders = await this.client.get(`spaces/${this.targetSpaceId}/stories`, {
               with_slug: parentFolderSlug
             })
@@ -165,7 +166,7 @@ const SyncSpaces = {
         }
 
         let createdFolder = null
-        if (this.isBackup) backupData.folders.push(payload)
+        if (this.isBackup) backupData.push(payload)
         if (existingFolder.data.stories.length === 1) {
           console.log(`Folder ${folder.name} already exists`)
           createdFolder = await this.client.put('spaces/' + this.targetSpaceId + '/stories/' + existingFolder.data.stories[0].id, payload)

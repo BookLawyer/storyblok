@@ -28,15 +28,47 @@ const RestoreSpace = {
     const rawFolders = fs.readFileSync(foundedFile)
     const folders = JSON.parse(rawFolders)
 
-    for (var f = 0; f < folders.folders.length; f++) {
-      createdFolder = await this.client.post('spaces/' + this.targetSpaceId + '/stories', folders.folders[f])
-      console.log(chalk.green('✓') + ` Folder ${folders.folders[f].story.name} created`)
+    for (var f = 0; f < folders.length; f++) {
+      try {
+        if (folders[f].story.parent_id) {
+          // Parent child resolving
+          const folderSlug = folders[f].story.full_slug.split('/')
+          const parentFolderSlug = folderSlug.splice(0, folderSlug.length - 1).join('/')
+
+          const parentFolders = await this.client.get(`spaces/${this.targetSpaceId}/stories`, {
+            with_slug: parentFolderSlug
+          })
+
+          if (parentFolders.data.stories.length) {
+            folders[f].story.parent_id = parentFolders.data.stories[0].id
+          }
+        }
+        createdFolder = await this.client.post('spaces/' + this.targetSpaceId + '/stories', folders[f])
+        console.log(chalk.green('✓') + ` Folder ${folders[f].story.name} created`)
+      } catch (e) {
+        console.error(
+          chalk.red('X') + ` Folder ${folders[f].story.name} Sync failed: ${e.message}`
+        )
+        console.log(e)
+      }
     }
   },
 
   // restore stories
   async restoreStories() {
     console.log(chalk.green('✓') + ' Restoring stories...')
+    const targetFolders = await this.client.getAll(`spaces/${this.targetSpaceId}/stories`, {
+      folder_only: 1,
+      sort_by: 'slug:asc'
+    })
+
+    let folderMapping = {}
+
+    for (let i = 0; i < targetFolders.length; i++) {
+      var folder = targetFolders[i]
+      folderMapping[folder.full_slug] = folder.id
+    }
+
     let foundedFile = null
     const filenames = fs.readdirSync('./')
     for (var f = 0; f < filenames.length; f++) {
@@ -48,9 +80,25 @@ const RestoreSpace = {
     const rawStories = fs.readFileSync(foundedFile)
     const stories = JSON.parse(rawStories)
 
-    for (var f = 0; f < stories.stories.length; f++) {
-      createdStory = await this.client.post('spaces/' + this.targetSpaceId + '/stories', stories.stories[f])
-      console.log(chalk.green('✓') + ` Story ${stories.stories[f].story.name} created`)
+    for (var f = 0; f < stories.length; f++) {
+      const slugs = stories[f].story.full_slug.split('/')
+      let folderId = 0
+
+      if (slugs.length > 1) {
+        slugs.pop()
+        var folderSlug = slugs.join('/')
+
+        if (folderMapping[folderSlug]) {
+          folderId = folderMapping[folderSlug]
+        } else {
+          console.error(chalk.red('X') + 'The folder does not exist ' + folderSlug)
+          continue
+        }
+      }
+
+      stories[f].story.parent_id = folderId
+      createdStory = await this.client.post('spaces/' + this.targetSpaceId + '/stories', stories[f])
+      console.log(chalk.green('✓') + ` Story ${stories[f].story.name} created`)
     }
   },
 
