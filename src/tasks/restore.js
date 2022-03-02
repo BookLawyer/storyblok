@@ -17,15 +17,15 @@ const RestoreSpace = {
   // restore folders
   async restoreFolders() {
     console.log(chalk.green('✓') + ' Looking for backup file...')
-    let foundedFile = null
+    let foundFile = null
     const filenames = fs.readdirSync('./')
     for (var f = 0; f < filenames.length; f++) {
       if (filenames[f].includes('folders')) {
-        foundedFile = filenames[f]
+        foundFile = filenames[f]
       }
     }
     console.log(chalk.green('✓') + ' Found last backuped file...')
-    const rawFolders = fs.readFileSync(foundedFile)
+    const rawFolders = fs.readFileSync(foundFile)
     const folders = JSON.parse(rawFolders)
 
     for (var f = 0; f < folders.length; f++) {
@@ -69,15 +69,15 @@ const RestoreSpace = {
       folderMapping[folder.full_slug] = folder.id
     }
 
-    let foundedFile = null
+    let foundFile = null
     const filenames = fs.readdirSync('./')
     for (var f = 0; f < filenames.length; f++) {
       if (filenames[f].includes('stories')) {
-        foundedFile = filenames[f]
+        foundFile = filenames[f]
       }
     }
     console.log(chalk.green('✓') + ' Found last backuped file...')
-    const rawStories = fs.readFileSync(foundedFile)
+    const rawStories = fs.readFileSync(foundFile)
     const stories = JSON.parse(rawStories)
 
     for (var f = 0; f < stories.length; f++) {

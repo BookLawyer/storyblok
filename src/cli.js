@@ -169,7 +169,6 @@ program
   .requiredOption('--type <TYPE>', 'Define what will be sync. Can be components, folders, stories, datasources or roles')
   .requiredOption('--source <SPACE_ID>', 'Source space id')
   .requiredOption('--target <SPACE_ID>', 'Target space id')
-  .option('--backup', 'Generate a backup file for each type of content')
   .action(async (options) => {
     console.log(`${chalk.blue('-')} Sync data between spaces\n`)
 
@@ -380,6 +379,54 @@ program
       )
     } catch (e) {
       console.log(chalk.red('X') + ' An error ocurred to import data : ' + e.message)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('backup')
+  .description('Generate a backup file for each type of content defined')
+  .requiredOption('-t, --type <TYPE>', 'Type of the content you want to backup. Can be components, folders, stories')
+  .requiredOption('--source <SPACE_ID>', 'Source space id')
+  .requiredOption('--target-dir <DESTINATION>', 'Target destination for backup, a directory where file will be created')
+  .action(async (options) => {
+    console.log(`${chalk.blue('-')} Starting backup of space...`)
+
+    const {
+      type,
+      source,
+      target
+    } = options
+
+    if (!source) {
+      console.log(chalk.red('X') + ' Please provide the space as argument --source YOUR_SPACE_ID.')
+      process.exit(0)
+    }
+
+    try {
+      if (!api.isAuthorized()) {
+        await api.processLogin()
+      }
+
+      const _types = type.split(',') || []
+
+      _types.forEach(_type => {
+        if (!BACKUP_TYPES.includes(_type)) {
+          throw new Error(`The type ${_type} is not valid`)
+        }
+      })
+
+      api.setSpaceId(source)
+      const token = creds.get().token || null
+      await tasks.backup(_types, {
+        token,
+        source,
+        target
+      })
+
+      console.log('\n' + chalk.green('✓') + 'Space backup completed')
+    } catch (e) {
+      console.log(chalk.red('X') + ' An error occurred when executing the backup task: ' + e.message)
       process.exit(1)
     }
   })

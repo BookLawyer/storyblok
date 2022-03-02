@@ -107,6 +107,48 @@ $ storyblok sync --type components --source 00001 --target 00002
 $ storyblok sync --type components,stories --source 00001 --target 00002
 ```
 
+### backup
+
+Backup folder, stories and components from a space to a local file, if process didn't finish you can re-run it and will write the backup from where it left off
+
+```sh
+$ storyblok backup --type <COMMAND> --source <SPACE_ID> --target-dir <DESTINATION>
+```
+
+#### Options
+
+* `type`: describe the command type to execute. Can be: `folders`, `components` or `stories`. It's possible pass multiple types separated by comma (`,`).
+* `source`: the source space to use to backup
+* `target-dir`: the target directory where to write the backup file
+
+#### Examples
+
+```sh
+# Backup stories from `00001` space to `./dir/` directory
+$ storyblok backup --type stories --source 00001 --target-dir ./your-folder/
+```
+
+### restore
+
+Restore data from a file(s), define which type(s) you want to restore and will look for the respective file in the given directory to restore it to a target space
+
+```sh
+$ storyblok restore --type <COMMAND> --target <SPACE_ID> --source-dir <SOURCE_DIR>
+```
+
+#### Options
+
+* `type`: describe the command type to execute. Can be: `folders`, `components` or `stories`. It's possible pass multiple types separated by comma (`,`).
+* `target`: the target space
+* `source-dir`: the source directory where to read the backup file
+
+#### Examples
+
+```sh
+# Restore folders and stories from `./dir/` to `00001` space
+$ storyblok sync --type stories --source 00001 --source-dir ./your-folder/
+```
+
 ### quickstart
 
 Create a space in Storyblok and select the boilerplate to use
@@ -230,7 +272,7 @@ this-is-my-title;This is my title;"Lorem ipsum dolor sit amet";https://a.storybl
 A json file need to have following format:
 
 ```json
-[ 
+[
   {
     "path": "this-is-my-title",
     "title": "This is my title",

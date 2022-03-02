@@ -10,9 +10,16 @@ const SYNC_TYPES = [
   'datasources'
 ]
 
+const BACKUP_TYPES = [
+  'folders',
+  'components',
+  'stories'
+]
+
 module.exports = {
   LOGIN_URL,
   SIGNUP_URL,
   API_URL,
-  SYNC_TYPES
+  SYNC_TYPES,
+  BACKUP_TYPES
 }
