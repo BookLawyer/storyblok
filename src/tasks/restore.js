@@ -44,6 +44,9 @@ const RestoreSpace = {
           }
         }
         createdFolder = await this.client.post('spaces/' + this.targetSpaceId + '/stories', folders[f])
+        if (createdFolder.data.story.uuid !== folders[f].story.uuid) {
+          await this.client.put('spaces/' + this.targetSpaceId + '/stories/' + createdFolder.data.story.id + '/update_uuid', { uuid: folders[f].story.uuid })
+        }
         console.log(chalk.green('✓') + ` Folder ${folders[f].story.name} created`)
       } catch (e) {
         console.error(

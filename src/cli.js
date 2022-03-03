@@ -13,7 +13,7 @@ const pkg = require('../package.json')
 
 const tasks = require('./tasks')
 const { getQuestions, lastStep, api, creds } = require('./utils')
-const { SYNC_TYPES } = require('./constants')
+const { SYNC_TYPES, BACKUP_TYPES } = require('./constants')
 
 clear()
 console.log(chalk.cyan(figlet.textSync('Storyblok')))
